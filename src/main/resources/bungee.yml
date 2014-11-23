@@ -1,0 +1,5 @@
+name: SyncGlist
+main: net.portalblock.syncglist.SyncGlist
+version: 1.0
+author: portalBlock
+depends: [ProxyConnClient]
