@@ -29,7 +29,7 @@ public class GlistCommand extends Command {
         if(APIAccess.getApiVersion() >= 0.3){
             //API is the required version.
             api = APIAccess.getApi(); //Set the API for use later.
-            ProxyServer.getInstance().getLogger().info("SyncGlist has loaded the ProxyConn API!");
+            ProxyServer.getInstance().getLogger().info("SyncGlist has loaded ProxyConn API version " + APIAccess.getApiVersion() + "!");
         }else{
             //API is not the required version.
             ProxyServer.getInstance().getLogger().warning("SyncGlist requires a newer ProxyConn API version!");
