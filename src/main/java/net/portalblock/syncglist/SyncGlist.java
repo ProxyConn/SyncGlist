@@ -18,14 +18,14 @@ public class SyncGlist extends Plugin {
     @Override
     public void onEnable() {
         /*
-        We have to delay by 2 seconds here to be safe because its originally a Bungee command so ProxyConn waits 1 second to register
-        it and we should wait 2.
+        We have to delay by 3 seconds here to be safe because its originally a Bungee command so ProxyConn waits 2 second to register
+        it and we should wait 3.
         */
         getProxy().getScheduler().schedule(this, new Runnable() {
             @Override
             public void run() {
                 getProxy().getPluginManager().registerCommand(SyncGlist.this, new GlistCommand());
             }
-        }, 2, TimeUnit.SECONDS);
+        }, 3, TimeUnit.SECONDS);
     }
 }

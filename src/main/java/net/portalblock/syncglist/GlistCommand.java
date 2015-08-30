@@ -10,10 +10,14 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 import net.portalblock.pc.publicapi.API;
 import net.portalblock.pc.publicapi.APIAccess;
 import net.portalblock.pc.publicapi.NetworkPlayer;
+import net.portalblock.pc.publicapi.messaging.Click;
+import net.portalblock.pc.publicapi.messaging.Hover;
+import net.portalblock.pc.publicapi.messaging.Message;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +35,10 @@ public class GlistCommand extends Command {
         /*
         We check to make sure that the API is the correct minimum version if so we set the API.
         We use the method API#getTotalOnlinePlayers() that is only included in version 0.3
+
+        Update: Use 0.7 for modern messaging support.
          */
-        if(APIAccess.getApiVersion() >= 0.3){
+        if(APIAccess.getApiVersion() >= 0.7){
             //API is the required version.
             api = APIAccess.getApi(); //Set the API for use later.
             ProxyServer.getInstance().getLogger().info("SyncGlist has loaded ProxyConn API version " + APIAccess.getApiVersion() + "!");
@@ -65,6 +71,16 @@ public class GlistCommand extends Command {
             players.get(player.getServer()).add(player.getName());
         }
 
+        if(sender instanceof ProxiedPlayer){ //Check if the sender supports modern messages, if not then use old style.
+            NetworkPlayer player = api.getPlayerByName(sender.getName());
+            if(player != null){ //Always good to check as the player might not be fully registered.
+                sendModernMessage(player, players);
+                return;
+            }
+        }
+
+        //Modern messages failed for one of the above reasons, we will fallback to the old style.
+
         //Now we format the HashMap and send it to the player.
         for(Map.Entry<String, ArrayList<String>> entry : players.entrySet()){
             StringBuilder glistBuilder = new StringBuilder();
@@ -87,5 +103,36 @@ public class GlistCommand extends Command {
         Now we send the number of total players online.
          */
         sender.sendMessage(TextComponent.fromLegacyText("Total players online: " + api.getTotalOnlinePlayers()));
+    }
+
+    private void sendModernMessage(NetworkPlayer player, HashMap<String, ArrayList<String>> players){
+        for(Map.Entry<String, ArrayList<String>> entry : players.entrySet()){
+            Message root = new Message(""); //Form root message for this server.
+
+            Message server = new Message(String.format("[%s] ", entry.getKey())); //Form the server.
+            server.setColor(net.portalblock.pc.publicapi.messaging.ChatColor.GREEN);
+            server.setClick(new Click(Click.Action.RUN_COMMAND, "/server + " + entry.getKey()));
+            server.setHover(new Hover(Hover.Action.SHOW_TEXT, "&6Join this server"));
+            root.addChild(server); //Add the server to the root message.
+
+            Message count = new Message(String.format("(%s): ", entry.getValue().size())); //Form the player amount.
+            count.setColor(net.portalblock.pc.publicapi.messaging.ChatColor.YELLOW);
+            root.addChild(count); //Add the count to the root message.
+
+            boolean isFirst = true;
+            StringBuilder nameBuilder = new StringBuilder();
+            for(String name : entry.getValue()){
+                nameBuilder.append(isFirst ? name : ", " + name);
+                isFirst = false;
+            }
+            Message names = new Message(nameBuilder.toString()); //Form the player names.
+            names.setColor(net.portalblock.pc.publicapi.messaging.ChatColor.WHITE);
+            root.addChild(names); //Add player names to the root message.
+
+            /*
+            Build it all and send it to the player so we can move the the next server.
+             */
+            player.sendMessage(root);
+        }
     }
 }
